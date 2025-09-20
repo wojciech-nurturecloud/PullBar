@@ -58,7 +58,7 @@ struct Pull: Codable {
     var deletions: Int?
     var additions: Int?
     var reviews: Review
-    var author: User
+    var author: User?
     var repository: Repository
     var commits: CommitsNodes?
     var labels: Nodes<Label>
@@ -111,7 +111,7 @@ struct UserEdge: Codable {
 }
 
 struct UserNode: Codable {
-    var author: User
+    var author: User?
     
     enum CodingKeys: String, CodingKey {
         case author
@@ -125,6 +125,10 @@ struct User: Codable {
     enum CodingKeys: String, CodingKey {
         case login
         case avatarUrl
+    }
+    
+    static var ghost: User {
+        return User(login: "ghost", avatarUrl: nil)
     }
 }
 
@@ -280,3 +284,4 @@ struct ContextNode: Codable, Hashable {
         case targetUrl
     }
 }
+

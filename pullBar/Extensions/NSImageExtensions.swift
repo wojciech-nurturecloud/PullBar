@@ -17,10 +17,20 @@ extension NSImage {
         self.init(data: newImg.tiffRepresentation!)
     }
     
-    static func imageFromUrl(fromURL url: URL) -> NSImage? {
-        guard let data = try? Foundation.Data(contentsOf: url) else { return nil }
-        guard let image = NSImage(data: data) else { return nil }
-        return image
+    static func loadImageAsync(fromURL url: URL, completion: @escaping (NSImage?) -> Void) {
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            guard let data = data, error == nil,
+                  let image = NSImage(data: data) else {
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+                return
+            }
+            
+            DispatchQueue.main.async {
+                completion(image)
+            }
+        }.resume()
     }
     
     func tint(color: NSColor) -> NSImage {
