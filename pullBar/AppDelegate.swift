@@ -181,7 +181,7 @@ extension AppDelegate {
             .appendString(string: pull.node.repository.name)
             .appendSeparator()
             .appendIcon(iconName: "person")
-            .appendString(string: pull.node.author.login)
+            .appendString(string: pull.node.author?.login ?? User.ghost.login)
         
         if !pull.node.labels.nodes.isEmpty && Defaults[.showLabels] {
             issueItemTitle
@@ -196,7 +196,7 @@ extension AppDelegate {
         
         issueItemTitle.appendNewLine()
         
-        let approvedByMe = pull.node.reviews.edges.contains{ $0.node.author.login == Defaults[.githubUsername] }
+        let approvedByMe = pull.node.reviews.edges.contains{ $0.node.author?.login == Defaults[.githubUsername] }
         issueItemTitle
             .appendIcon(iconName: "check-circle", color: approvedByMe ? NSColor(named: "green")! : NSColor.secondaryLabelColor)
             .appendString(string: " " + String(pull.node.reviews.totalCount))
@@ -208,17 +208,21 @@ extension AppDelegate {
             .appendString(string: pull.node.createdAt.getElapsedInterval())
         
         if Defaults[.showAvatar] {
-            var image = NSImage()
-            if let imageURL = pull.node.author.avatarUrl {
-                image = NSImage.imageFromUrl(fromURL: imageURL) ?? NSImage(named: "person")!
-            } else {
-                image = NSImage(named: "person")!
+            // Set default image initially
+            let defaultImage = NSImage(named: "person")!
+            let resizedDefaultImage = resizeImage(image: defaultImage, size: NSSize(width: 36.0, height: 36.0))
+            issueItem.image = resizedDefaultImage
+            
+            // Load avatar asynchronously if available
+            if let author = pull.node.author, let imageURL = author.avatarUrl {
+                NSImage.loadImageAsync(fromURL: imageURL) { loadedImage in
+                    guard let loadedImage = loadedImage else { return }
+                    
+                    loadedImage.cacheMode = NSImage.CacheMode.always
+                    let resizedImage = self.resizeImage(image: loadedImage, size: NSSize(width: 36.0, height: 36.0))
+                    issueItem.image = resizedImage
+                }
             }
-            image.cacheMode = NSImage.CacheMode.always
-            if ((image.size.height != 36) || (image.size.width != 36)) {
-                image.size = NSSize(width: 36.0, height: 36.0)
-            }
-            issueItem.image = image
         }
         
         
@@ -437,5 +441,21 @@ extension AppDelegate {
         if (pressedButton == .alertFirstButtonReturn) {
             NSWorkspace.shared.open(URL(string: link)!)
         }
+    }
+    
+    /// Resizes an NSImage to the specified size
+    func resizeImage(image: NSImage, size: NSSize) -> NSImage {
+        if image.size.height == size.height && image.size.width == size.width {
+            return image
+        }
+        
+        let newImage = NSImage(size: size)
+        newImage.lockFocus()
+        image.draw(in: NSRect(origin: .zero, size: size),
+                  from: NSRect(origin: .zero, size: image.size),
+                  operation: .sourceOver,
+                  fraction: 1.0)
+        newImage.unlockFocus()
+        return newImage
     }
 }
