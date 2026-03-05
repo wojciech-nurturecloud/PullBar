@@ -23,6 +23,12 @@ extension Defaults.Keys {
     static let excludeDependabot = Key<Bool>("excludeDependabot", default: false)
     static let excludeAlreadyReviewed = Key<Bool>("excludeAlreadyReviewed", default: false)
     static let excludeAlreadyApproved = Key<Bool>("excludeAlreadyApproved", default: false)
+
+    static let highlightIconEnabled = Key<Bool>("highlightIconEnabled", default: false)
+    static let highlightIconThreshold = Key<Int>("highlightIconThreshold", default: 3)
+
+    static let highlightOldPRsEnabled = Key<Bool>("highlightOldPRsEnabled", default: false)
+    static let highlightOldPRsHours = Key<Int>("highlightOldPRsHours", default: 1)
     
     static let refreshRate = Key<Int>("refreshRate", default: 5)
     static let buildType = Key<BuildType>("buildType", default: .none)

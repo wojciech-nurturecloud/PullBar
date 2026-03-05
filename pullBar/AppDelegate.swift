@@ -11,6 +11,10 @@ import SwiftUI
 import Foundation
 import KeychainAccess
 
+extension Notification.Name {
+    static let previewHighlight = Notification.Name("previewHighlight")
+}
+
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -27,6 +31,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         NotificationCenter.default.addObserver(self, selector: #selector(AppDelegate.windowClosed), name: NSWindow.willCloseNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(AppDelegate.previewHighlight), name: .previewHighlight, object: nil)
 
         guard let statusButton = statusBarItem.button else { return }
         let icon = NSImage(named: "git-pull-request")
@@ -62,6 +67,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
     
+    @objc
+    func previewHighlight() {
+        setHighlighted(true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            self.setHighlighted(false)
+        }
+    }
+
     @objc
     func openLink(_ sender: NSMenuItem) {
         NSWorkspace.shared.open(sender.representedObject as! URL)
@@ -165,6 +178,58 @@ extension AppDelegate: NSMenuDelegate {
         }
 
         self.addMenuFooterItems()
+        self.updateIconHighlight(allPulls: assignedPulls + createdPulls + reviewRequestedPulls)
+    }
+
+    func setHighlighted(_ highlighted: Bool) {
+        guard let statusButton = statusBarItem.button else { return }
+
+        statusButton.wantsLayer = true
+
+        if highlighted {
+            statusButton.layer?.backgroundColor = NSColor.systemRed.cgColor
+            statusButton.layer?.cornerRadius = 4
+
+            let icon = NSImage(named: "git-pull-request")
+            icon?.size = NSSize(width: 16, height: 16)
+            icon?.isTemplate = false
+            statusButton.image = icon?.tint(color: .systemYellow)
+
+            let title = statusButton.title
+            if !title.isEmpty {
+                statusButton.attributedTitle = NSAttributedString(
+                    string: title,
+                    attributes: [.foregroundColor: NSColor.systemYellow, .font: NSFont.menuBarFont(ofSize: 0)]
+                )
+            }
+        } else {
+            statusButton.layer?.backgroundColor = nil
+            statusButton.layer?.cornerRadius = 0
+
+            let icon = NSImage(named: "git-pull-request")
+            icon?.size = NSSize(width: 16, height: 16)
+            icon?.isTemplate = true
+            statusButton.image = icon
+
+            let title = statusButton.title
+            if !title.isEmpty {
+                statusButton.attributedTitle = NSAttributedString(string: title)
+            }
+        }
+    }
+
+    func updateIconHighlight(allPulls: [Edge]) {
+        let countExceeded = Defaults[.highlightIconEnabled] && allPulls.count > Defaults[.highlightIconThreshold]
+
+        let hasOldPR: Bool = {
+            guard Defaults[.highlightOldPRsEnabled] else { return false }
+            let thresholdSeconds = Double(Defaults[.highlightOldPRsHours]) * 3600
+            return allPulls.contains { edge in
+                Date().timeIntervalSince(edge.node.createdAt) > thresholdSeconds
+            }
+        }()
+
+        setHighlighted(countExceeded || hasOldPR)
     }
 
     @objc

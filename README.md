@@ -23,7 +23,16 @@ If you liked the PullBar, check the [PullBar Pro](https://menubar-apps.github.io
 
  - shows assigned, created and/or review requested pull requests;
  - for each pull request shows title, number, project, author, number of approvals, number of added/deleted lines and how long ago this PR was created;
- - show check suites information.
+ - show check suites information;
+ - **filter options** (in General tab):
+   - exclude Dependabot PRs;
+   - exclude PRs already reviewed by you;
+   - exclude PRs that already have an approval;
+ - **icon highlighting**: turn the menu bar icon red (with yellow text) when:
+   - the number of PRs exceeds a configurable threshold;
+   - any PR is older than a configurable age (1–24 hours);
+ - **refresh on click**: PR list refreshes every time you open the menu for up-to-date counts;
+ - uses `user-review-requested` to show only PRs directly assigned to you (excludes team-based review requests).
 
 # Installation
 

@@ -18,6 +18,10 @@ struct PreferencesView: View {
     @Default(.excludeDependabot) var excludeDependabot
     @Default(.excludeAlreadyReviewed) var excludeAlreadyReviewed
     @Default(.excludeAlreadyApproved) var excludeAlreadyApproved
+    @Default(.highlightIconEnabled) var highlightIconEnabled
+    @Default(.highlightIconThreshold) var highlightIconThreshold
+    @Default(.highlightOldPRsEnabled) var highlightOldPRsEnabled
+    @Default(.highlightOldPRsHours) var highlightOldPRsHours
     @FromKeychain(.githubToken) var githubToken
 
     @Default(.showAssigned) var showAssigned
@@ -99,6 +103,46 @@ struct PreferencesView: View {
                         Toggle("Exclude Dependabot PRs", isOn: $excludeDependabot)
                         Toggle("Exclude already reviewed by me", isOn: $excludeAlreadyReviewed)
                         Toggle("Exclude already approved PRs", isOn: $excludeAlreadyApproved)
+                    }
+                }
+
+                HStack(alignment: .center) {
+                    Text("Highlight icon:").frame(width: 120, alignment: .trailing)
+                    VStack(alignment: .leading) {
+                        Toggle("Turn icon red when PRs exceed threshold", isOn: $highlightIconEnabled)
+                        HStack {
+                            Text("Threshold:")
+                            Picker("", selection: $highlightIconThreshold) {
+                                Text("1").tag(1)
+                                Text("2").tag(2)
+                                Text("3").tag(3)
+                                Text("5").tag(5)
+                                Text("10").tag(10)
+                            }
+                            .labelsHidden()
+                            .pickerStyle(MenuPickerStyle())
+                            .frame(width: 60)
+                            .disabled(!highlightIconEnabled)
+                        }
+                        Toggle("Turn icon red when any PR is older than", isOn: $highlightOldPRsEnabled)
+                        HStack {
+                            Text("Age:")
+                            Picker("", selection: $highlightOldPRsHours) {
+                                Text("1 hour").tag(1)
+                                Text("2 hours").tag(2)
+                                Text("4 hours").tag(4)
+                                Text("8 hours").tag(8)
+                                Text("24 hours").tag(24)
+                            }
+                            .labelsHidden()
+                            .pickerStyle(MenuPickerStyle())
+                            .frame(width: 100)
+                            .disabled(!highlightOldPRsEnabled)
+                        }
+                        Button("Preview") {
+                            NotificationCenter.default.post(name: .previewHighlight, object: nil)
+                        }
+                        .disabled(!highlightIconEnabled && !highlightOldPRsEnabled)
                     }
                 }
 
