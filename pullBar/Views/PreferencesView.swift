@@ -21,7 +21,8 @@ struct PreferencesView: View {
     @Default(.highlightIconEnabled) var highlightIconEnabled
     @Default(.highlightIconThreshold) var highlightIconThreshold
     @Default(.highlightOldPRsEnabled) var highlightOldPRsEnabled
-    @Default(.highlightOldPRsHours) var highlightOldPRsHours
+    @Default(.highlightOldPRsMinutes) var highlightOldPRsMinutes
+    @Default(.excludedAuthors) var excludedAuthors
     @FromKeychain(.githubToken) var githubToken
 
     @Default(.showAssigned) var showAssigned
@@ -126,18 +127,11 @@ struct PreferencesView: View {
                         }
                         Toggle("Turn icon red when any PR is older than", isOn: $highlightOldPRsEnabled)
                         HStack {
-                            Text("Age:")
-                            Picker("", selection: $highlightOldPRsHours) {
-                                Text("1 hour").tag(1)
-                                Text("2 hours").tag(2)
-                                Text("4 hours").tag(4)
-                                Text("8 hours").tag(8)
-                                Text("24 hours").tag(24)
-                            }
-                            .labelsHidden()
-                            .pickerStyle(MenuPickerStyle())
-                            .frame(width: 100)
-                            .disabled(!highlightOldPRsEnabled)
+                            Text("Age (minutes):")
+                            TextField("", value: $highlightOldPRsMinutes, formatter: NumberFormatter())
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 60)
+                                .disabled(!highlightOldPRsEnabled)
                         }
                         Button("Preview") {
                             NotificationCenter.default.post(name: .previewHighlight, object: nil)
@@ -228,17 +222,30 @@ struct PreferencesView: View {
 
             Form {
                 HStack(alignment: .top) {
-                    Text("Additional Query:").frame(width: 120, alignment: .trailing)
-                    TextField("", text: $githubAdditionalQuery)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .disableAutocorrection(true)
-                        .textContentType(.password)
-                        .frame(width: 380)
+                    Text("Exclude Authors:").frame(width: 120, alignment: .trailing)
+                    VStack(alignment: .leading) {
+                        TextField("", text: $excludedAuthors, prompt: Text("user1, user2"))
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .disableAutocorrection(true)
+                            .frame(width: 300)
+                        Text("Comma-separated GitHub usernames")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
                 }
-                Text("See the GitHub [search documentation](https://docs.github.com/en/search-github/getting-started-with-searching-on-github/understanding-the-search-syntax) for more information on advanced queries")
-                    .font(.footnote)
-                    .padding(.leading, 8)
-                    .foregroundColor(.secondary)
+
+                HStack(alignment: .top) {
+                    Text("Additional Query:").frame(width: 120, alignment: .trailing)
+                    VStack(alignment: .leading) {
+                        TextField("", text: $githubAdditionalQuery)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .disableAutocorrection(true)
+                            .frame(width: 300)
+                        Text("[Search docs](https://docs.github.com/en/search-github/getting-started-with-searching-on-github/understanding-the-search-syntax)")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
+                }
             }.padding(8)
                 .frame(maxWidth: .infinity)
                 .tabItem{Text("Advanced")}

@@ -22,6 +22,13 @@ public class GitHubClient {
         if Defaults[.excludeAlreadyReviewed] {
             parts.append("-reviewed-by:\(Defaults[.githubUsername])")
         }
+        let excludedAuthors = Defaults[.excludedAuthors]
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        for author in excludedAuthors {
+            parts.append("-author:\(author)")
+        }
         let extra = Defaults[.githubAdditionalQuery]
         if !extra.isEmpty {
             parts.append(extra)

@@ -20,17 +20,20 @@ extension Defaults.Keys {
     static let showAvatar = Key<Bool>("showAvatar", default: false)
     static let showLabels = Key<Bool>("showLabels", default: true)
 
-    static let excludeDependabot = Key<Bool>("excludeDependabot", default: false)
-    static let excludeAlreadyReviewed = Key<Bool>("excludeAlreadyReviewed", default: false)
-    static let excludeAlreadyApproved = Key<Bool>("excludeAlreadyApproved", default: false)
+    static let excludeDependabot = Key<Bool>("excludeDependabot", default: true)
+    static let excludeAlreadyReviewed = Key<Bool>("excludeAlreadyReviewed", default: true)
+    static let excludeAlreadyApproved = Key<Bool>("excludeAlreadyApproved", default: true)
 
-    static let highlightIconEnabled = Key<Bool>("highlightIconEnabled", default: false)
+    static let highlightIconEnabled = Key<Bool>("highlightIconEnabled", default: true)
     static let highlightIconThreshold = Key<Int>("highlightIconThreshold", default: 3)
 
-    static let highlightOldPRsEnabled = Key<Bool>("highlightOldPRsEnabled", default: false)
-    static let highlightOldPRsHours = Key<Int>("highlightOldPRsHours", default: 1)
+    static let highlightOldPRsEnabled = Key<Bool>("highlightOldPRsEnabled", default: true)
+    static let highlightOldPRsMinutes = Key<Int>("highlightOldPRsMinutes", default: 10)
+
+    static let excludedAuthors = Key<String>("excludedAuthors", default: "")
+    static let hasLaunchedBefore = Key<Bool>("hasLaunchedBefore", default: false)
     
-    static let refreshRate = Key<Int>("refreshRate", default: 5)
+    static let refreshRate = Key<Int>("refreshRate", default: 1)
     static let buildType = Key<BuildType>("buildType", default: .none)
     static let counterType = Key<CounterType>("counterType", default: .reviewRequested)
 }

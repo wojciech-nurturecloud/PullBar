@@ -10,6 +10,7 @@ import Defaults
 import SwiftUI
 import Foundation
 import KeychainAccess
+import LaunchAtLogin
 
 extension Notification.Name {
     static let previewHighlight = Notification.Name("previewHighlight")
@@ -32,6 +33,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         NotificationCenter.default.addObserver(self, selector: #selector(AppDelegate.windowClosed), name: NSWindow.willCloseNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(AppDelegate.previewHighlight), name: .previewHighlight, object: nil)
+
+        if !Defaults[.hasLaunchedBefore] {
+            Defaults[.hasLaunchedBefore] = true
+            LaunchAtLogin.isEnabled = true
+        }
 
         guard let statusButton = statusBarItem.button else { return }
         let icon = NSImage(named: "git-pull-request")
@@ -223,7 +229,7 @@ extension AppDelegate: NSMenuDelegate {
 
         let hasOldPR: Bool = {
             guard Defaults[.highlightOldPRsEnabled] else { return false }
-            let thresholdSeconds = Double(Defaults[.highlightOldPRsHours]) * 3600
+            let thresholdSeconds = Double(Defaults[.highlightOldPRsMinutes]) * 60
             return allPulls.contains { edge in
                 Date().timeIntervalSince(edge.node.createdAt) > thresholdSeconds
             }
@@ -233,92 +239,20 @@ extension AppDelegate: NSMenuDelegate {
     }
 
     @objc
+    func toggleExcludeApproved() {
+        Defaults[.excludeAlreadyApproved].toggle()
+        refreshMenuInBackground()
+    }
+
+    @objc
+    func toggleExcludeReviewed() {
+        Defaults[.excludeAlreadyReviewed].toggle()
+        refreshMenuInBackground()
+    }
+
+    @objc
     func refreshMenu() {
-        NSLog("Refreshing menu")
-        self.menu.removeAllItems()
-
-        if (Defaults[.githubUsername] == "" || githubToken == "") {
-            addMenuFooterItems()
-            return
-        }
-
-
-        var assignedPulls: [Edge]? = []
-        var createdPulls: [Edge]? = []
-        var reviewRequestedPulls: [Edge]? = []
-
-
-        let group = DispatchGroup()
-        
-        if Defaults[.showAssigned] {
-            group.enter()
-            ghClient.getAssignedPulls() { pulls in
-                assignedPulls?.append(contentsOf: pulls)
-                group.leave()
-            }
-        }
-
-        if Defaults[.showCreated] {
-            group.enter()
-            ghClient.getCreatedPulls() { pulls in
-                createdPulls?.append(contentsOf: pulls)
-                group.leave()
-            }
-        }
-
-        if Defaults[.showRequested] {
-            group.enter()
-            ghClient.getReviewRequestedPulls() { pulls in
-                reviewRequestedPulls?.append(contentsOf: pulls)
-                group.leave()
-            }
-        }
-
-        group.notify(queue: .main) {
-            
-            if let assignedPulls = assignedPulls, let createdPulls = createdPulls, let reviewRequestedPulls = reviewRequestedPulls {
-                self.statusBarItem.button?.title = ""
-
-                if Defaults[.showAssigned] && !assignedPulls.isEmpty {
-                    if Defaults[.counterType] == .assigned {
-                        self.statusBarItem.button?.title = String(assignedPulls.count)
-                    }
-
-                    self.menu.addItem(NSMenuItem(title: "Assigned (\(assignedPulls.count))", action: nil, keyEquivalent: ""))
-                    for pull in assignedPulls {
-                        self.menu.addItem(self.createMenuItem(pull: pull))
-                    }
-                    self.menu.addItem(.separator())
-                }
-                
-                if Defaults[.showCreated] && !createdPulls.isEmpty {
-                    if Defaults[.counterType] == .created {
-                        self.statusBarItem.button?.title = String(createdPulls.count)
-                    }
-
-                    self.menu.addItem(NSMenuItem(title: "Created (\(createdPulls.count))", action: nil, keyEquivalent: ""))
-                    for pull in createdPulls {
-                        self.menu.addItem(self.createMenuItem(pull: pull))
-                    }
-                    self.menu.addItem(.separator())
-                }
-
-                if Defaults[.showRequested] && !reviewRequestedPulls.isEmpty {
-                    if Defaults[.counterType] == .reviewRequested {
-                        self.statusBarItem.button?.title = String(reviewRequestedPulls.count)
-                    }
-
-                    self.menu.addItem(NSMenuItem(title: "Review Requested (\(reviewRequestedPulls.count))", action: nil, keyEquivalent: ""))
-                    for pull in reviewRequestedPulls {
-                        self.menu.addItem(self.createMenuItem(pull: pull))
-                    }
-                    self.menu.addItem(.separator())
-                }
-                
-                
-                self.addMenuFooterItems()
-            }
-        }
+        refreshMenuInBackground()
     }
     
     func createMenuItem(pull: Edge) -> NSMenuItem {
@@ -481,6 +415,15 @@ extension AppDelegate: NSMenuDelegate {
     }
     
     func addMenuFooterItems() {
+        let excludeApprovedItem = NSMenuItem(title: "Exclude already approved", action: #selector(self.toggleExcludeApproved), keyEquivalent: "")
+        excludeApprovedItem.state = Defaults[.excludeAlreadyApproved] ? .on : .off
+
+        let excludeReviewedItem = NSMenuItem(title: "Exclude already reviewed by me", action: #selector(self.toggleExcludeReviewed), keyEquivalent: "")
+        excludeReviewedItem.state = Defaults[.excludeAlreadyReviewed] ? .on : .off
+
+        self.menu.addItem(excludeApprovedItem)
+        self.menu.addItem(excludeReviewedItem)
+        self.menu.addItem(.separator())
         self.menu.addItem(withTitle: "Refresh", action: #selector(self.refreshMenu), keyEquivalent: "")
         self.menu.addItem(.separator())
         self.menu.addItem(withTitle: "Preferences...", action: #selector(self.openPrefecencesWindow), keyEquivalent: "")
