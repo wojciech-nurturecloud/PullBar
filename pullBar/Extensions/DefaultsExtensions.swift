@@ -19,6 +19,10 @@ extension Defaults.Keys {
     
     static let showAvatar = Key<Bool>("showAvatar", default: false)
     static let showLabels = Key<Bool>("showLabels", default: true)
+
+    static let excludeDependabot = Key<Bool>("excludeDependabot", default: false)
+    static let excludeAlreadyReviewed = Key<Bool>("excludeAlreadyReviewed", default: false)
+    static let excludeAlreadyApproved = Key<Bool>("excludeAlreadyApproved", default: false)
     
     static let refreshRate = Key<Int>("refreshRate", default: 5)
     static let buildType = Key<BuildType>("buildType", default: .none)

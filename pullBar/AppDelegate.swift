@@ -27,7 +27,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         NotificationCenter.default.addObserver(self, selector: #selector(AppDelegate.windowClosed), name: NSWindow.willCloseNotification, object: nil)
-        
+
         guard let statusButton = statusBarItem.button else { return }
         let icon = NSImage(named: "git-pull-request")
         let size = NSSize(width: 16, height: 16)
@@ -35,7 +35,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         icon?.size = size
         statusButton.image = icon
         statusButton.imagePosition = NSControl.ImagePosition.imageLeft
-        
+
+        menu.delegate = self
         statusBarItem.menu = menu
         
         timer = Timer.scheduledTimer(
@@ -68,7 +69,104 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
 }
 
-extension AppDelegate {
+extension AppDelegate: NSMenuDelegate {
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        refreshMenuInBackground()
+    }
+
+    func refreshMenuInBackground() {
+        NSLog("Refreshing menu in background")
+
+        if (Defaults[.githubUsername] == "" || githubToken == "") {
+            return
+        }
+
+        var assignedPulls: [Edge]? = []
+        var createdPulls: [Edge]? = []
+        var reviewRequestedPulls: [Edge]? = []
+
+        let group = DispatchGroup()
+
+        if Defaults[.showAssigned] {
+            group.enter()
+            ghClient.getAssignedPulls() { pulls in
+                assignedPulls?.append(contentsOf: pulls)
+                group.leave()
+            }
+        }
+
+        if Defaults[.showCreated] {
+            group.enter()
+            ghClient.getCreatedPulls() { pulls in
+                createdPulls?.append(contentsOf: pulls)
+                group.leave()
+            }
+        }
+
+        if Defaults[.showRequested] {
+            group.enter()
+            ghClient.getReviewRequestedPulls() { pulls in
+                reviewRequestedPulls?.append(contentsOf: pulls)
+                group.leave()
+            }
+        }
+
+        group.notify(queue: .main) {
+            self.rebuildMenu(assignedPulls: assignedPulls ?? [], createdPulls: createdPulls ?? [], reviewRequestedPulls: reviewRequestedPulls ?? [])
+        }
+    }
+
+    func filterApproved(_ pulls: [Edge]) -> [Edge] {
+        if Defaults[.excludeAlreadyApproved] {
+            return pulls.filter { $0.node.reviews.totalCount == 0 }
+        }
+        return pulls
+    }
+
+    func rebuildMenu(assignedPulls: [Edge], createdPulls: [Edge], reviewRequestedPulls: [Edge]) {
+        let assignedPulls = filterApproved(assignedPulls)
+        let createdPulls = filterApproved(createdPulls)
+        let reviewRequestedPulls = filterApproved(reviewRequestedPulls)
+
+        self.menu.removeAllItems()
+        self.statusBarItem.button?.title = ""
+
+        if Defaults[.showAssigned] && !assignedPulls.isEmpty {
+            if Defaults[.counterType] == .assigned {
+                self.statusBarItem.button?.title = String(assignedPulls.count)
+            }
+            self.menu.addItem(NSMenuItem(title: "Assigned (\(assignedPulls.count))", action: nil, keyEquivalent: ""))
+            for pull in assignedPulls {
+                self.menu.addItem(self.createMenuItem(pull: pull))
+            }
+            self.menu.addItem(.separator())
+        }
+
+        if Defaults[.showCreated] && !createdPulls.isEmpty {
+            if Defaults[.counterType] == .created {
+                self.statusBarItem.button?.title = String(createdPulls.count)
+            }
+            self.menu.addItem(NSMenuItem(title: "Created (\(createdPulls.count))", action: nil, keyEquivalent: ""))
+            for pull in createdPulls {
+                self.menu.addItem(self.createMenuItem(pull: pull))
+            }
+            self.menu.addItem(.separator())
+        }
+
+        if Defaults[.showRequested] && !reviewRequestedPulls.isEmpty {
+            if Defaults[.counterType] == .reviewRequested {
+                self.statusBarItem.button?.title = String(reviewRequestedPulls.count)
+            }
+            self.menu.addItem(NSMenuItem(title: "Review Requested (\(reviewRequestedPulls.count))", action: nil, keyEquivalent: ""))
+            for pull in reviewRequestedPulls {
+                self.menu.addItem(self.createMenuItem(pull: pull))
+            }
+            self.menu.addItem(.separator())
+        }
+
+        self.addMenuFooterItems()
+    }
+
     @objc
     func refreshMenu() {
         NSLog("Refreshing menu")

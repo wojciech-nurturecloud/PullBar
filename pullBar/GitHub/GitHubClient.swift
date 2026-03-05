@@ -11,8 +11,23 @@ import Alamofire
 import KeychainAccess
 
 public class GitHubClient {
-    
+
     @FromKeychain(.githubToken) var githubToken
+
+    private var additionalQueryWithFilters: String {
+        var parts = [String]()
+        if Defaults[.excludeDependabot] {
+            parts.append("-author:app/dependabot")
+        }
+        if Defaults[.excludeAlreadyReviewed] {
+            parts.append("-reviewed-by:\(Defaults[.githubUsername])")
+        }
+        let extra = Defaults[.githubAdditionalQuery]
+        if !extra.isEmpty {
+            parts.append(extra)
+        }
+        return parts.joined(separator: " ")
+    }
     
     func getAssignedPulls(completion:@escaping (([Edge]) -> Void)) -> Void {
         
@@ -25,7 +40,7 @@ public class GitHubClient {
             .accept("application/json")
         ]
         
-        let graphQlQuery = buildGraphQlQuery(queryString: "is:open is:pr assignee:\(Defaults[.githubUsername]) archived:false \(Defaults[.githubAdditionalQuery])")
+        let graphQlQuery = buildGraphQlQuery(queryString: "is:open is:pr assignee:\(Defaults[.githubUsername]) archived:false \(additionalQueryWithFilters)")
         
         let parameters = [
             "query": graphQlQuery,
@@ -56,7 +71,7 @@ public class GitHubClient {
             .authorization(bearerToken: githubToken),
             .accept("application/json")
         ]
-        let graphQlQuery = buildGraphQlQuery(queryString: "is:open is:pr author:\(Defaults[.githubUsername]) archived:false \(Defaults[.githubAdditionalQuery])")
+        let graphQlQuery = buildGraphQlQuery(queryString: "is:open is:pr author:\(Defaults[.githubUsername]) archived:false \(additionalQueryWithFilters)")
         
         let parameters = [
             "query": graphQlQuery,
@@ -86,7 +101,7 @@ public class GitHubClient {
             .authorization(bearerToken: githubToken),
             .accept("application/json")
         ]
-        let graphQlQuery = buildGraphQlQuery(queryString: "is:open is:pr review-requested:\(Defaults[.githubUsername]) archived:false \(Defaults[.githubAdditionalQuery])")
+        let graphQlQuery = buildGraphQlQuery(queryString: "is:open is:pr user-review-requested:@me archived:false \(additionalQueryWithFilters)")
         
         let parameters = [
             "query": graphQlQuery,

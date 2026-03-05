@@ -15,6 +15,9 @@ struct PreferencesView: View {
     @Default(.githubApiBaseUrl) var githubApiBaseUrl
     @Default(.githubUsername) var githubUsername
     @Default(.githubAdditionalQuery) var githubAdditionalQuery
+    @Default(.excludeDependabot) var excludeDependabot
+    @Default(.excludeAlreadyReviewed) var excludeAlreadyReviewed
+    @Default(.excludeAlreadyApproved) var excludeAlreadyApproved
     @FromKeychain(.githubToken) var githubToken
 
     @Default(.showAssigned) var showAssigned
@@ -87,6 +90,15 @@ struct PreferencesView: View {
                     Text("Launch at login:").frame(width: 120, alignment: .trailing)
                     LaunchAtLogin.Toggle {
                         Text("")
+                    }
+                }
+
+                HStack(alignment: .center) {
+                    Text("Filters:").frame(width: 120, alignment: .trailing)
+                    VStack(alignment: .leading) {
+                        Toggle("Exclude Dependabot PRs", isOn: $excludeDependabot)
+                        Toggle("Exclude already reviewed by me", isOn: $excludeAlreadyReviewed)
+                        Toggle("Exclude already approved PRs", isOn: $excludeAlreadyApproved)
                     }
                 }
 
@@ -178,7 +190,6 @@ struct PreferencesView: View {
                         .disableAutocorrection(true)
                         .textContentType(.password)
                         .frame(width: 380)
-                  
                 }
                 Text("See the GitHub [search documentation](https://docs.github.com/en/search-github/getting-started-with-searching-on-github/understanding-the-search-syntax) for more information on advanced queries")
                     .font(.footnote)
