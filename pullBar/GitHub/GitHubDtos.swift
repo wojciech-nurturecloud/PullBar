@@ -61,10 +61,15 @@ struct Pull: Codable {
     var author: User?
     var repository: Repository
     var commits: CommitsNodes?
+    var statusCheckRollupState: CommitsNodes?
     var labels: Nodes<Label>
     var isDraft: Bool
     var isReadByViewer: Bool
-    
+
+    var overallBuildState: String? {
+        statusCheckRollupState?.nodes.first?.commit.statusCheckRollup?.state
+    }
+
     enum CodingKeys: String, CodingKey {
         case url
         case updatedAt
@@ -77,6 +82,7 @@ struct Pull: Codable {
         case author
         case repository
         case commits
+        case statusCheckRollupState
         case labels
         case isDraft
         case isReadByViewer
@@ -247,8 +253,8 @@ struct Label: Codable, Hashable {
 
 struct StatusCheckRollup: Codable, Hashable {
     var state: String
-    var contexts: ContextNodes
-    
+    var contexts: ContextNodes?
+
     enum CodingKeys: String, CodingKey {
         case state
         case contexts

@@ -293,6 +293,22 @@ extension AppDelegate: NSMenuDelegate {
         
         issueItemTitle.appendNewLine()
         
+        if let buildState = pull.node.overallBuildState {
+            let buildColor: NSColor
+            switch buildState {
+            case "SUCCESS":
+                buildColor = NSColor(red: 0.0, green: 0.8, blue: 0.0, alpha: 1.0)
+            case "FAILURE", "ERROR":
+                buildColor = NSColor(red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0)
+            case "PENDING":
+                buildColor = NSColor(red: 1.0, green: 0.6, blue: 0.0, alpha: 1.0)
+            default:
+                buildColor = NSColor.gray
+            }
+            issueItemTitle
+                .appendIcon(iconName: "dot-fill", color: buildColor, size: 16)
+        }
+
         let approvedByMe = pull.node.reviews.edges.contains{ $0.node.author?.login == Defaults[.githubUsername] }
         issueItemTitle
             .appendIcon(iconName: "check-circle", color: approvedByMe ? NSColor(named: "green")! : NSColor.secondaryLabelColor)
@@ -364,14 +380,14 @@ extension AppDelegate: NSMenuDelegate {
             
             else if let statusCheckRollup = commits.nodes[0].commit.statusCheckRollup {
                 
-                if statusCheckRollup.contexts.nodes.count > 0 {
+                if let contexts = statusCheckRollup.contexts, contexts.nodes.count > 0 {
                     issueItem.submenu = NSMenu()
                     issueItemTitle
                         .appendSeparator()
                         .appendIcon(iconName: "checklist", color: NSColor.secondaryLabelColor)
                 }
-                
-                for check in statusCheckRollup.contexts.nodes {
+
+                for check in statusCheckRollup.contexts?.nodes ?? [] {
                     let itemTitle = NSMutableAttributedString()
                     itemTitle.appendString(string: check.name ?? check.context ?? "<empty>", color: NSColor(.primary))
                     itemTitle.appendNewLine()

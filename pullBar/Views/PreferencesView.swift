@@ -43,74 +43,60 @@ struct PreferencesView: View {
     
     @State private var isExpanded: Bool = false
 
+    private func row<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
+        HStack(alignment: .top) {
+            Text(label)
+                .frame(width: 140, alignment: .trailing)
+            content()
+        }
+    }
+
     var body: some View {
 
         TabView {
-            Form {
-                HStack(alignment: .center) {
-                    Text("Pull Requests:").frame(width: 120, alignment: .trailing)
-                    VStack(alignment: .leading){
+            VStack(alignment: .leading, spacing: 10) {
+                row("Pull Requests:") {
+                    VStack(alignment: .leading) {
                         Toggle("assigned", isOn: $showAssigned)
                         Toggle("created", isOn: $showCreated)
                         Toggle("review requested", isOn: $showRequested)
                     }
                 }
-
-                HStack(alignment: .center) {
-                    Text("Build Information:").frame(width: 120, alignment: .trailing)
-                    Picker("", selection: $builtType, content: {
+                row("Build Information:") {
+                    Picker("", selection: $builtType) {
                         ForEach(BuildType.allCases) { bt in
                             Text(bt.description)
                         }
-                    })
+                    }
                     .labelsHidden()
                     .pickerStyle(RadioGroupPickerStyle())
-                    .frame(width: 120)
                 }
-
-                HStack(alignment: .center) {
-                    Text("Show Avatar:").frame(width: 120, alignment: .trailing)
-                    Toggle("", isOn: $showAvatar)
-                }
-
-                HStack(alignment: .center) {
-                    Text("Show Labels:").frame(width: 120, alignment: .trailing)
-                    Toggle("", isOn: $showLabels)
-                }
-
-                HStack(alignment: .center) {
-                    Text("Refresh Rate:").frame(width: 120, alignment: .trailing)
-                    Picker("", selection: $refreshRate, content: {
+                row("Show Avatar:") { Toggle("", isOn: $showAvatar) }
+                row("Show Labels:") { Toggle("", isOn: $showLabels) }
+                row("Refresh Rate:") {
+                    Picker("", selection: $refreshRate) {
                         Text("1 minute").tag(1)
                         Text("5 minutes").tag(5)
                         Text("10 minutes").tag(10)
                         Text("15 minutes").tag(15)
                         Text("30 minutes").tag(30)
-                    }).labelsHidden()
-                        .pickerStyle(MenuPickerStyle())
-                        .frame(width: 100)
+                    }.labelsHidden()
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(width: 100)
                 }
-
-                HStack(alignment: .center) {
-                    Text("Launch at login:").frame(width: 120, alignment: .trailing)
-                    LaunchAtLogin.Toggle {
-                        Text("")
-                    }
+                row("Launch at login:") {
+                    LaunchAtLogin.Toggle { Text("") }
                 }
-
-                HStack(alignment: .center) {
-                    Text("Filters:").frame(width: 120, alignment: .trailing)
+                row("Filters:") {
                     VStack(alignment: .leading) {
                         Toggle("Exclude Dependabot PRs", isOn: $excludeDependabot)
-                        Toggle("Exclude already reviewed by me", isOn: $excludeAlreadyReviewed)
-                        Toggle("Exclude already approved PRs", isOn: $excludeAlreadyApproved)
+                        Toggle("Exclude reviewed by me", isOn: $excludeAlreadyReviewed)
+                        Toggle("Exclude approved PRs", isOn: $excludeAlreadyApproved)
                     }
                 }
-
-                HStack(alignment: .center) {
-                    Text("Highlight icon:").frame(width: 120, alignment: .trailing)
-                    VStack(alignment: .leading) {
-                        Toggle("Turn icon red when PRs exceed threshold", isOn: $highlightIconEnabled)
+                row("Highlight icon:") {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Toggle("PRs exceed threshold", isOn: $highlightIconEnabled)
                         HStack {
                             Text("Threshold:")
                             Picker("", selection: $highlightIconThreshold) {
@@ -125,9 +111,9 @@ struct PreferencesView: View {
                             .frame(width: 60)
                             .disabled(!highlightIconEnabled)
                         }
-                        Toggle("Turn icon red when any PR is older than", isOn: $highlightOldPRsEnabled)
+                        Toggle("Any PR older than", isOn: $highlightOldPRsEnabled)
                         HStack {
-                            Text("Age (minutes):")
+                            Text("Age (min):")
                             TextField("", value: $highlightOldPRsMinutes, formatter: NumberFormatter())
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 60)
@@ -139,15 +125,14 @@ struct PreferencesView: View {
                         .disabled(!highlightIconEnabled && !highlightOldPRsEnabled)
                     }
                 }
-
             }
-            .padding(8)
+            .padding(16)
             .frame(maxWidth: .infinity)
             .tabItem{Text("General")}
 
             Form {
                 HStack(alignment: .center) {
-                    Text("API Base URL:").frame(width: 120, alignment: .trailing)
+                    Text("API Base URL:").frame(width: 140, alignment: .trailing)
                     TextField("", text: $githubApiBaseUrl)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .disableAutocorrection(true)
@@ -155,7 +140,7 @@ struct PreferencesView: View {
                         .frame(width: 200)
                 }
                 HStack(alignment: .center) {
-                    Text("Username:").frame(width: 120, alignment: .trailing)
+                    Text("Username:").frame(width: 140, alignment: .trailing)
                     TextField("", text: $githubUsername)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .disableAutocorrection(true)
@@ -164,7 +149,7 @@ struct PreferencesView: View {
                 }
 
                 HStack(alignment: .center) {
-                    Text("Token:").frame(width: 120, alignment: .trailing)
+                    Text("Token:").frame(width: 140, alignment: .trailing)
                     VStack(alignment: .leading) {
                         HStack() {
                             SecureField("", text: $githubToken)
@@ -222,7 +207,7 @@ struct PreferencesView: View {
 
             Form {
                 HStack(alignment: .top) {
-                    Text("Exclude Authors:").frame(width: 120, alignment: .trailing)
+                    Text("Exclude Authors:").frame(width: 140, alignment: .trailing)
                     VStack(alignment: .leading) {
                         TextField("", text: $excludedAuthors, prompt: Text("user1, user2"))
                             .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -235,7 +220,7 @@ struct PreferencesView: View {
                 }
 
                 HStack(alignment: .top) {
-                    Text("Additional Query:").frame(width: 120, alignment: .trailing)
+                    Text("Additional Query:").frame(width: 140, alignment: .trailing)
                     VStack(alignment: .leading) {
                         TextField("", text: $githubAdditionalQuery)
                             .textFieldStyle(RoundedBorderTextFieldStyle())

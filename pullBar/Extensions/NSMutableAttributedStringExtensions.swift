@@ -48,6 +48,21 @@ extension NSMutableAttributedString {
     }
 
     @discardableResult
+    func appendIcon(iconName: String, color: NSColor, size: CGFloat) -> NSMutableAttributedString {
+        let image = NSImage(named: iconName)?.tint(color: color)
+        image?.size = NSSize(width: size, height: size)
+        let image1Attachment = NSTextAttachment()
+        image1Attachment.attachmentCell = NSTextAttachmentCell(imageCell: image)
+        image1Attachment.image = image
+        let image1String = NSMutableAttributedString(attachment: image1Attachment)
+        let range = NSMakeRange(0, image1String.length)
+        image1String.addAttribute(NSAttributedString.Key.baselineOffset, value: -1.0, range: range)
+        self.append(image1String)
+        self.appendString(string: " ")
+        return self
+    }
+
+    @discardableResult
     func appendSeparator() -> NSMutableAttributedString {
         self.append(NSMutableAttributedString(string: "   "))
         return self

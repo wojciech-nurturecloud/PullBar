@@ -232,6 +232,15 @@ public class GitHubClient {
                                     }
                                 }
                             }
+                            statusCheckRollupState: commits(last: 1) {
+                                nodes {
+                                    commit {
+                                        statusCheckRollup {
+                                            state
+                                        }
+                                    }
+                                }
+                            }
                             \(build)
                         }
                     }
